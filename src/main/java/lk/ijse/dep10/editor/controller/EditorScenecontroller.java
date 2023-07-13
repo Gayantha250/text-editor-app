@@ -4,9 +4,6 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.print.JobSettings;
-import javafx.print.PageLayout;
-import javafx.print.PrinterJob;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -18,11 +15,14 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import lk.ijse.dep10.editor.AppInitializer;
 import lk.ijse.dep10.editor.util.SearchResult;
-import lk.ijse.dep10.editor.AppInitializer;
-import lk.ijse.dep10.editor.util.SearchResult;
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
+import net.sf.jasperreports.view.JasperViewer;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -162,7 +162,10 @@ public class EditorScenecontroller extends AppInitializer {
 
     @FXML
     void mnNewOnAction(ActionEvent event) {//1
-        txteditor.setText("");
+        if (!txteditor.getText().equals("")){
+            txteditor.setText("");
+        }
+
 
     }
 
@@ -271,7 +274,7 @@ public class EditorScenecontroller extends AppInitializer {
     @FXML
     void mnAboutOnAction(ActionEvent event) throws IOException {//6
         Stage stage = new Stage();
-        stage.setScene(new Scene(new FXMLLoader(getClass().getResource("/view/AboutTitle.fxml")).load()));
+        stage.setScene(new Scene(new FXMLLoader(getClass().getResource("/view/AboutScene.fxml")).load()));
         stage.initModality(Modality.WINDOW_MODAL);
         stage.setTitle("About");
         stage.setResizable(false);
@@ -280,7 +283,7 @@ public class EditorScenecontroller extends AppInitializer {
     }
 
     public void mnHelpOnAction(ActionEvent actionEvent) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION, "For help contact via nimanthikaabeyrathna@gmail.com ");
+        Alert alert = new Alert(Alert.AlertType.INFORMATION, "For help contact via gayantha250@gmail.com ");
         alert.setTitle("Help");
         alert.setHeaderText(null);
         alert.showAndWait();
@@ -290,7 +293,9 @@ public class EditorScenecontroller extends AppInitializer {
     @FXML
     void mnCloseOnAction(ActionEvent event) throws IOException {
         closeAction();
-        mnNew.fire();
+        if (!txteditor.getText().equals("")){
+            txteditor.setText("");
+        }
         isFileSaved = false;
 
 
@@ -300,33 +305,27 @@ public class EditorScenecontroller extends AppInitializer {
     @FXML
     void mnPrintOnAction(ActionEvent event) {
 
-        PrinterJob job = PrinterJob.createPrinterJob();
 
-        if (job == null) {
-            System.out.println("Error");
-            return;
+        try {
+            InputStream reportTemplate = getClass().getResourceAsStream("/reports/texteditor.jasper");
+            JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportTemplate);
+
+
+            Map<String, Object> parameters = new HashMap<>();
+
+
+            parameters.put("text", txteditor.getText());
+
+
+            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, new JREmptyDataSource(1));
+
+            JasperViewer.viewReport(jasperPrint, false);
+
+        } catch (JRException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
-        boolean proceed = job.showPrintDialog(lblEditing.getScene().getWindow());
-
-        JobSettings ss1 = job.getJobSettings();
-
-        PageLayout pageLayout1 = ss1.getPageLayout();
-
-        double pgW1 = pageLayout1.getPrintableWidth();
-        double pgH1 = pageLayout1.getPrintableHeight();
-
-        Label tempText = new Label();
-        tempText.setPrefWidth(pgW1);
-        tempText.setPrefHeight(pgH1);
-        tempText.setWrapText(true);
-        tempText.setText(txteditor.getText());
-
-
-        if (proceed) {
-            job.printPage(tempText);
-            job.endJob();
-        }
     }
 
 
